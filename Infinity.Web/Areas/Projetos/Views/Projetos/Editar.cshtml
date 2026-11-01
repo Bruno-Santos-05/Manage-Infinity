@@ -1,0 +1,20 @@
+@model Infinity.Web.Models.ProjetoViewModel
+@{
+    ViewData["Title"] = "Editar Projeto";
+}
+<div class="page-header d-flex align-items-center">
+    <span class="page-octicon"><i class="bi bi-folder2-open"></i></span>
+    <div>
+        <h3>Editar Projeto</h3>
+        <p class="page-subtitle">Atualize os dados do projeto</p>
+    </div>
+</div>
+
+<form asp-action="Editar" method="post" id="formProjeto" novalidate>
+    <input type="hidden" asp-for="Id" />
+    <partial name="_Form" model="Model" />
+</form>
+
+@section Scripts {
+    <partial name="_ValidationScriptsPartial" />
+}

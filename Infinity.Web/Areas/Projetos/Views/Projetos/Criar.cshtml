@@ -1,0 +1,19 @@
+@model Infinity.Web.Models.ProjetoViewModel
+@{
+    ViewData["Title"] = "Novo Projeto";
+}
+<div class="page-header d-flex align-items-center">
+    <span class="page-octicon"><i class="bi bi-folder2-open"></i></span>
+    <div>
+        <h3>Novo Projeto</h3>
+        <p class="page-subtitle">Cadastre um novo projeto de impressão 3D</p>
+    </div>
+</div>
+
+<form asp-action="Criar" method="post" id="formProjeto" novalidate>
+    <partial name="_Form" model="Model" />
+</form>
+
+@section Scripts {
+    <partial name="_ValidationScriptsPartial" />
+}

@@ -1,0 +1,114 @@
+<!DOCTYPE html>
+<html lang="pt-br">
+<head>
+    <meta charset="utf-8" />
+    <meta name="viewport" content="width=device-width, initial-scale=1.0" />
+    <title>@ViewData["Title"] - Infinity</title>
+    <link rel="stylesheet" href="~/lib/bootstrap/dist/css/bootstrap.min.css" />
+    <link rel="stylesheet" href="https://cdn.jsdelivr.net/npm/bootstrap-icons@1.11.3/font/bootstrap-icons.min.css" />
+    <link rel="stylesheet" href="~/css/site.css" asp-append-version="true" />
+    <link rel="stylesheet" href="~/Infinity.Web.styles.css" asp-append-version="true" />
+</head>
+<body>
+    <header>
+        <nav class="navbar navbar-expand-lg navbar-infinity">
+            <div class="container-fluid px-3 px-lg-4">
+                <a class="navbar-brand" asp-area="" asp-controller="Home" asp-action="Index">
+                    <span class="brand-icon"><i class="bi bi-boxes"></i></span>
+                    <span>Infinity<span style="color:#a5b4fc;"> 3D</span></span>
+                </a>
+                <button class="navbar-toggler" type="button" data-bs-toggle="collapse" data-bs-target="#navbarMain"
+                        aria-controls="navbarMain" aria-expanded="false" aria-label="Toggle navigation">
+                    <span class="navbar-toggler-icon"></span>
+                </button>
+                <div class="collapse navbar-collapse" id="navbarMain">
+                    <ul class="navbar-nav me-auto mb-2 mb-lg-0">
+                        <li class="nav-item">
+                            <a class="nav-link @(IsActive("Dashboard","Dashboard") ? "active" : "")"
+                               asp-area="Dashboard" asp-controller="Dashboard" asp-action="Index">
+                                <i class="bi bi-speedometer2"></i> Dashboard</a>
+                        </li>
+                        <li class="nav-item">
+                            <a class="nav-link @(IsActive("Projetos","Projetos") ? "active" : "")"
+                               asp-area="Projetos" asp-controller="Projetos" asp-action="Index">
+                                <i class="bi bi-folder2-open"></i> Projetos</a>
+                        </li>
+                        <li class="nav-item dropdown">
+                            <a class="nav-link dropdown-toggle" href="#" id="navbarCadastros" role="button"
+                               data-bs-toggle="dropdown" aria-expanded="false">
+                                <i class="bi bi-journal-plus"></i> Cadastros
+                            </a>
+                            <ul class="dropdown-menu" aria-labelledby="navbarCadastros">
+                                <li><a class="dropdown-item" asp-area="Cadastros" asp-controller="Materiais" asp-action="Index"><i class="bi bi-box-seam"></i> Materiais</a></li>
+                                <li><a class="dropdown-item" asp-area="Cadastros" asp-controller="Embalagens" asp-action="Index"><i class="bi bi-box2-heart"></i> Embalagens</a></li>
+                                <li><a class="dropdown-item" asp-area="Cadastros" asp-controller="Clientes" asp-action="Index"><i class="bi bi-person-lines-fill"></i> Clientes</a></li>
+                                <li><a class="dropdown-item" asp-area="Cadastros" asp-controller="Grupos" asp-action="Index"><i class="bi bi-collection"></i> Grupos de Projeto</a></li>
+                                <li><a class="dropdown-item" asp-area="Cadastros" asp-controller="Origens" asp-action="Index"><i class="bi bi-signpost-split"></i> Nos Conheceu Por Onde?</a></li>
+                                <li><a class="dropdown-item" asp-area="Cadastros" asp-controller="Niveis" asp-action="Index"><i class="bi bi-brush"></i> Níveis de Pintura</a></li>
+                                <li><hr class="dropdown-divider"></li>
+                                <li><a class="dropdown-item" asp-area="Cadastros" asp-controller="Configuracoes" asp-action="Index"><i class="bi bi-gear"></i> Configurações Financeiras</a></li>
+                            </ul>
+                        </li>
+                        @if (User.Identity!.IsAuthenticated)
+                        {
+                            <li class="nav-item dropdown">
+                                <a class="nav-link dropdown-toggle" href="#" id="navbarAdmin" role="button"
+                                   data-bs-toggle="dropdown" aria-expanded="false">
+                                    <i class="bi bi-person-circle"></i> Conta
+                                </a>
+                                <ul class="dropdown-menu" aria-labelledby="navbarAdmin">
+                                    <li class="dropdown-item-text small text-muted">Olá, @User.FindFirst("Nome")?.Value</li>
+                                    <li><a class="dropdown-item" asp-area="Admin" asp-controller="Usuarios" asp-action="Index"><i class="bi bi-people"></i> Usuários</a></li>
+                                    <li><hr class="dropdown-divider"></li>
+                                    <li><a class="dropdown-item" asp-area="Admin" asp-controller="Login" asp-action="Sair"><i class="bi bi-box-arrow-right"></i> Sair</a></li>
+                                </ul>
+                            </li>
+                        }
+                    </ul>
+                </div>
+            </div>
+        </nav>
+    </header>
+
+    <div class="container-fluid px-3 px-lg-4">
+        @if (TempData["Msg"] != null)
+        {
+            <div class="alert alert-success alert-dismissible fade show mt-3" role="alert">
+                <i class="bi bi-check-circle-fill me-1"></i> @TempData["Msg"]
+                <button type="button" class="btn-close" data-bs-dismiss="alert" aria-label="Close"></button>
+            </div>
+        }
+        @if (TempData["Erro"] != null)
+        {
+            <div class="alert alert-danger alert-dismissible fade show mt-3" role="alert">
+                <i class="bi bi-exclamation-triangle-fill me-1"></i> @TempData["Erro"]
+                <button type="button" class="btn-close" data-bs-dismiss="alert" aria-label="Close"></button>
+            </div>
+        }
+        <main role="main" class="py-4">
+            @RenderBody()
+        </main>
+    </div>
+
+    <footer class="footer text-center text-muted">
+        <div class="container">
+            <i class="bi bi-boxes"></i>&nbsp;© 2026 — Sistema Infinity · Gestão de Projetos de Impressão 3D
+        </div>
+    </footer>
+    <script src="~/lib/jquery/dist/jquery.min.js"></script>
+    <script src="~/lib/bootstrap/dist/js/bootstrap.bundle.min.js"></script>
+    <script src="~/js/site.js" asp-append-version="true"></script>
+    @await RenderSectionAsync("Scripts", required: false)
+</body>
+</html>
+
+@functions {
+    // Helper para destacar o link ativo no menu
+    private bool IsActive(string area, string controller)
+    {
+        var curArea = ViewContext.RouteData.Values["area"]?.ToString() ?? "";
+        var curController = ViewContext.RouteData.Values["controller"]?.ToString() ?? "";
+        return curArea.Equals(area, StringComparison.OrdinalIgnoreCase)
+            && curController.Equals(controller, StringComparison.OrdinalIgnoreCase);
+    }
+}

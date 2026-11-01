@@ -1,0 +1,56 @@
+@model Infinity.Web.Areas.Admin.Controllers.LoginViewModel
+@{
+    ViewData["Title"] = "Login";
+    Layout = null; // layout próprio (tela cheia)
+}
+<!DOCTYPE html>
+<html lang="pt-br">
+<head>
+    <meta charset="utf-8" />
+    <meta name="viewport" content="width=device-width, initial-scale=1.0" />
+    <title>Login - Infinity</title>
+    <link rel="stylesheet" href="~/lib/bootstrap/dist/css/bootstrap.min.css" />
+    <link rel="stylesheet" href="https://cdn.jsdelivr.net/npm/bootstrap-icons@1.11.3/font/bootstrap-icons.min.css" />
+    <link rel="stylesheet" href="~/css/site.css" asp-append-version="true" />
+</head>
+<body class="login-bg">
+    <div class="card login-card">
+        <div class="card-body">
+            <div class="login-logo">
+                <i class="bi bi-boxes"></i>
+            </div>
+            <div class="text-center mb-4">
+                <h4 class="fw-bold" style="color:#1e293b;">Sistema Infinity</h4>
+                <p class="text-muted small">Gestão de Projetos de Impressão 3D</p>
+            </div>
+
+            <form asp-action="Index" method="post">
+                <div asp-validation-summary="ModelOnly" class="text-danger small mb-2"></div>
+                <div class="mb-3">
+                    <label asp-for="Login" class="form-label">Login</label>
+                    <div class="input-group">
+                        <span class="input-group-text bg-white"><i class="bi bi-person"></i></span>
+                        <input asp-for="Login" class="form-control" placeholder="Digite seu login" autofocus />
+                    </div>
+                    <span asp-validation-for="Login" class="text-danger small"></span>
+                </div>
+                <div class="mb-3">
+                    <label asp-for="Senha" class="form-label">Senha</label>
+                    <div class="input-group">
+                        <span class="input-group-text bg-white"><i class="bi bi-lock"></i></span>
+                        <input asp-for="Senha" class="form-control" placeholder="Digite sua senha" />
+                    </div>
+                    <span asp-validation-for="Senha" class="text-danger small"></span>
+                </div>
+                <input type="hidden" name="retorno" value="@ViewBag.Retorno" />
+                <button type="submit" class="btn btn-primary w-100 mt-2 btn-lg">
+                    <i class="bi bi-box-arrow-in-right"></i> Entrar
+                </button>
+            </form>
+        </div>
+    </div>
+    <script src="~/lib/jquery/dist/jquery.min.js"></script>
+    <script src="~/lib/jquery-validation/dist/jquery.validate.min.js"></script>
+    <script src="~/lib/jquery-validation-unobtrusive/jquery.validate.unobtrusive.min.js"></script>
+</body>
+</html>

@@ -1,0 +1,36 @@
+@model Infinity.Web.Models.Grupo
+@{
+    ViewData["Title"] = "Novo Grupo";
+}
+<div class="page-header d-flex align-items-center">
+    <span class="page-octicon"><i class="bi bi-collection"></i></span>
+    <div>
+        <h3>Novo Grupo</h3>
+        <p class="page-subtitle">Crie um grupo de projetos</p>
+    </div>
+</div>
+<div class="card card-shadow">
+    <div class="card-body">
+        <form asp-action="Criar" method="post">
+            <div asp-validation-summary="ModelOnly" class="text-danger"></div>
+            <div class="row g-3">
+                <div class="col-md-6">
+                    <label asp-for="Nome" class="form-label">Nome do Grupo</label>
+                    <input asp-for="Nome" class="form-control" placeholder="Ex.: Colecionáveis, Utilitários..." />
+                    <span asp-validation-for="Nome" class="text-danger small"></span>
+                </div>
+                <div class="col-md-12">
+                    <label asp-for="Descricao" class="form-label"></label>
+                    <textarea asp-for="Descricao" class="form-control" rows="2"></textarea>
+                </div>
+            </div>
+            <div class="mt-4">
+                <button type="submit" class="btn btn-primary"><i class="bi bi-check-lg"></i> Salvar</button>
+                <a asp-action="Index" class="btn btn-secondary">Cancelar</a>
+            </div>
+        </form>
+    </div>
+</div>
+@section Scripts {
+    <partial name="_ValidationScriptsPartial" />
+}

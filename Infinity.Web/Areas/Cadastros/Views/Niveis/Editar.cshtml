@@ -1,0 +1,48 @@
+@model Infinity.Web.Models.NivelDificuldade
+@{
+    ViewData["Title"] = "Editar Nível de Dificuldade";
+}
+<div class="page-header d-flex align-items-center">
+    <span class="page-octicon"><i class="bi bi-brush"></i></span>
+    <div>
+        <h3>Editar Nível de Dificuldade</h3>
+        <p class="page-subtitle">Atualize o nível de dificuldade de pintura</p>
+    </div>
+</div>
+<div class="card card-shadow">
+    <div class="card-body">
+        <form asp-action="Editar" method="post">
+            <input type="hidden" asp-for="Id" />
+            <div asp-validation-summary="ModelOnly" class="text-danger"></div>
+            <div class="row g-3">
+                <div class="col-md-6">
+                    <label asp-for="Nome" class="form-label">Nível de Dificuldade</label>
+                    <input asp-for="Nome" class="form-control" />
+                    <span asp-validation-for="Nome" class="text-danger small"></span>
+                </div>
+                <div class="col-md-6">
+                    <label asp-for="LucroPercentual" class="form-label">Lucro (%)</label>
+                    <input asp-for="LucroPercentual" class="form-control" type="number" step="0.01" min="0" />
+                    <span asp-validation-for="LucroPercentual" class="text-danger small"></span>
+                </div>
+                <div class="col-md-12">
+                    <label asp-for="Descricao" class="form-label"></label>
+                    <textarea asp-for="Descricao" class="form-control" rows="2"></textarea>
+                </div>
+                <div class="col-md-4 d-flex align-items-end">
+                    <div class="form-check form-switch">
+                        <input asp-for="Ativo" class="form-check-input" type="checkbox" />
+                        <label asp-for="Ativo" class="form-check-label"></label>
+                    </div>
+                </div>
+            </div>
+            <div class="mt-4">
+                <button type="submit" class="btn btn-primary"><i class="bi bi-check-lg"></i> Salvar</button>
+                <a asp-action="Index" class="btn btn-secondary">Cancelar</a>
+            </div>
+        </form>
+    </div>
+</div>
+@section Scripts {
+    <partial name="_ValidationScriptsPartial" />
+}

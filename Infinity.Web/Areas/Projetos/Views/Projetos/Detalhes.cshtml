@@ -1,0 +1,182 @@
+@model Infinity.Web.Areas.Projetos.Controllers.ProjetoListaVM
+@{
+    var p = Model.Projeto;
+    var f = Model.Financeiro;
+    ViewData["Title"] = p.Nome;
+}
+<div class="page-header d-flex justify-content-between align-items-center flex-wrap gap-3">
+    <div class="d-flex align-items-center">
+        <span class="page-octicon"><i class="bi bi-folder2-open"></i></span>
+        <div>
+            <h3>@p.Nome</h3>
+            <p class="page-subtitle">Detalhes do projeto</p>
+        </div>
+    </div>
+    <div class="d-flex gap-2">
+        <a class="btn btn-warning" asp-action="Editar" asp-route-id="@p.Id"><i class="bi bi-pencil"></i> Editar</a>
+        <a class="btn btn-secondary" asp-action="Index"><i class="bi bi-arrow-left"></i> Voltar</a>
+    </div>
+</div>
+
+<div class="row g-4">
+    <!-- Resumo -->
+    <div class="col-lg-7">
+        <div class="card card-shadow">
+            <div class="card-header fw-bold"><i class="bi bi-info-circle"></i> Informações do Projeto</div>
+            <div class="card-body">
+                <div class="row g-3">
+                    <div class="col-md-6"><strong>Grupo:</strong> <span class="badge bg-info text-dark">@(p.Grupo?.Nome ?? "Sem grupo")</span></div>
+                    <div class="col-md-6"><strong>Data:</strong> @p.DataCriacao.ToString("dd/MM/yyyy")</div>
+                    <div class="col-md-12"><strong>Cliente(s):</strong> @string.Join(", ", Model.Clientes)</div>
+                    @if (!string.IsNullOrWhiteSpace(p.Descricao))
+                    {
+                        <div class="col-md-12">
+                            <strong>Descrição:</strong>
+                            <div class="border rounded p-2 bg-light">@p.Descricao</div>
+                        </div>
+                    }
+                    <div class="col-md-6">
+                        <strong>Pago:</strong>
+                        @if (p.Pago)
+                        {
+                            <span class="badge bg-success"><i class="bi bi-check-circle-fill"></i> PAGO</span>
+                        }
+                        else
+                        {
+                            <span class="badge bg-warning text-dark"><i class="bi bi-clock"></i> A RECEBER</span>
+                        }
+                    </div>
+                    <div class="col-md-6"><strong>Método de Pagamento:</strong> @(p.MetodoPagamento ?? "-")</div>
+                    <div class="col-md-6"><strong>Entrega:</strong> @(p.Entrega ? "SIM (frete R$ " + p.ValorFrete.ToString("C") + ")" : "NÃO")</div>
+                    <div class="col-md-6"><strong>Valor Hora Máquina:</strong> @p.ValorHoraMaquina.ToString("C")</div>
+                </div>
+                <hr />
+                <h6 class="text-muted">Estimativa vs Realizado</h6>
+                <div class="row g-3">
+                    <div class="col-md-6"><strong>Horas estimadas:</strong> @p.HorasEstimadas.ToString("0.##") h</div>
+                    <div class="col-md-6"><strong>Horas reais:</strong> @p.HorasReais.ToString("0.##") h <span class="text-@(f.DiffHoras > 0 ? "danger" : "success")">(@f.DiffHoras.ToString("+0.##;-0.##;0") h)</span></div>
+                    <div class="col-md-6"><strong>Material estimado:</strong> @f.MaterialEstimado.ToString("0.##") g</div>
+                    <div class="col-md-6"><strong>Material real:</strong> @p.MaterialReal.ToString("0.##") g <span class="text-@(f.DiffMaterial > 0 ? "danger" : "success")">(@f.DiffMaterial.ToString("+0.##;-0.##;0") g)</span></div>
+                    <div class="col-md-6"><strong>Pintura:</strong> @(p.Pintura ? "SIM" : "NÃO")</div>
+                    <div class="col-md-6"><strong>Nível de dificuldade da pintura:</strong> @(p.NivelDificuldade != null ? (p.NivelDificuldade.Nome + " (" + p.NivelDificuldade.LucroPercentual + "%)" ) : "-")</div>
+                </div>
+                <h6 class="text-muted mt-3">Materiais Utilizados</h6>
+                <ul class="mb-0">
+                    @foreach (var mm in Model.Materiais)
+                    {
+                        <li>@mm</li>
+                    }
+                </ul>
+                @if (Model.Embalagens != null && Model.Embalagens.Any())
+                {
+                    <h6 class="text-muted mt-3">Embalagens Utilizadas</h6>
+                    <ul class="mb-0">
+                        @foreach (var emb in Model.Embalagens)
+                        {
+                            <li>@emb</li>
+                        }
+                    </ul>
+                }
+            </div>
+        </div>
+    </div>
+
+    <!-- Financeiro -->
+    <div class="col-lg-5">
+        <div class="card card-shadow">
+            <div class="card-header fw-bold"><i class="bi bi-calculator"></i> Custos e Lucro</div>
+            <div class="card-body">
+                <table class="table table-sm">
+                    <thead>
+                        <tr>
+                            <th></th>
+                            <th class="text-end">Estimado</th>
+                            <th class="text-end">Real</th>
+                            <th class="text-end">Dif.</th>
+                        </tr>
+                    </thead>
+                    <tbody>
+                        <tr>
+                            <td>Material</td>
+                            <td class="text-end">@f.CustoMaterialEstimado.ToString("C")</td>
+                            <td class="text-end">@f.CustoMaterialReal.ToString("C")</td>
+                            <td class="text-end small text-@(f.DiffCustoMaterial > 0 ? "danger" : "success")">@(f.DiffCustoMaterial >= 0 ? "+" : "-")@Math.Abs(f.DiffCustoMaterial).ToString("C")</td>
+                        </tr>
+                        <tr>
+                            <td>Horas Máquina</td>
+                            <td class="text-end">@f.CustoHorasEstimado.ToString("C")</td>
+                            <td class="text-end">@f.CustoHorasReal.ToString("C")</td>
+                            <td class="text-end small text-@(f.DiffCustoHoras > 0 ? "danger" : "success")">@(f.DiffCustoHoras >= 0 ? "+" : "-")@Math.Abs(f.DiffCustoHoras).ToString("C")</td>
+                        </tr>
+                        @if (f.CustoEmbalagemEstimado > 0)
+                        {
+                            <tr>
+                                <td>Embalagens</td>
+                                <td class="text-end">@f.CustoEmbalagemEstimado.ToString("C")</td>
+                                <td class="text-end">@f.CustoEmbalagemReal.ToString("C")</td>
+                                <td class="text-end small text-muted">-</td>
+                            </tr>
+                        }
+                        @if (p.Pintura)
+                        {
+                            <tr>
+                                <td>Pintura</td>
+                                <td class="text-end">@f.CustoPinturaEstimado.ToString("C")</td>
+                                <td class="text-end">@f.CustoPinturaReal.ToString("C")</td>
+                                <td class="text-end small text-muted">-</td>
+                            </tr>
+                        }
+                        @if (p.Entrega)
+                        {
+                            <tr>
+                                <td>Frete</td>
+                                <td class="text-end">@f.CustoFreteEstimado.ToString("C")</td>
+                                <td class="text-end">@f.CustoFreteReal.ToString("C")</td>
+                                <td class="text-end small text-muted">-</td>
+                            </tr>
+                        }
+                        <tr class="table-light">
+                            <th class="fs-6">Custo Total</th>
+                            <th class="text-end fs-6">@f.CustoTotalEstimado.ToString("C")</th>
+                            <th class="text-end fs-6">@f.CustoTotalReal.ToString("C")</th>
+                            <th class="text-end fs-6 text-@(f.DiffCusto > 0 ? "danger" : "success")">@(f.DiffCusto >= 0 ? "+" : "-")@Math.Abs(f.DiffCusto).ToString("C")</th>
+                        </tr>
+                        <tr class="table-light">
+                            <td class="fw-semibold">Material + Hora</td>
+                            <td class="text-end fw-semibold">@f.SomaMaterialHoraEstimado.ToString("C")</td>
+                            <td class="text-end fw-semibold">@f.SomaMaterialHoraReal.ToString("C")</td>
+                            <td class="text-end fw-semibold small text-@(f.DiffSomaMaterialHora > 0 ? "danger" : "success")">@(f.DiffSomaMaterialHora >= 0 ? "+" : "-")@Math.Abs(f.DiffSomaMaterialHora).ToString("C")</td>
+                        </tr>
+                        <tr>
+                            <td>Valor de Venda (a cobrar)</td>
+                            <td class="text-end" colspan="3">
+                                @f.ValorVenda.ToString("C")
+                                @if (p.Pintura && f.PinturaPercentual > 0)
+                                {
+                                    <br /><small class="text-muted">(lucro @f.LucroDesejadoPercentual.ToString("0.##")% + pintura @f.PinturaPercentual.ToString("0.##")%)</small>
+                                }
+                                else
+                                {
+                                    <br /><small class="text-muted">(lucro @f.LucroDesejadoPercentual.ToString("0.##")%)</small>
+                                }
+                            </td>
+                        </tr>
+                        <tr class="table-success">
+                            <th class="fs-6">Lucro</th>
+                            <th class="text-end fs-6">@f.LucroEstimado.ToString("C")</th>
+                            <th class="text-end fs-6">@f.LucroReal.ToString("C")</th>
+                            <th class="text-end fs-6 text-@(f.DiffLucro >= 0 ? "success" : "danger")">@(f.DiffLucro >= 0 ? "+" : "-")@Math.Abs(f.DiffLucro).ToString("C")</th>
+                        </tr>
+                    </tbody>
+                </table>
+                @if (p.Pintura && p.NivelDificuldade != null)
+                {
+                    <div class="alert alert-info small mb-0">
+                        <i class="bi bi-info-circle"></i>
+                        Nível de pintura <strong>@p.NivelDificuldade.Nome</strong> agrega <strong>@p.NivelDificuldade.LucroPercentual.ToString("0.##")%</strong> de lucro adicional sobre o valor já com lucro desejado (ex.: custo 100 + lucro 50% = 150; + pintura 50% = 225).
+                    </div>
+                }
+            </div>
+        </div>
+    </div>
+</div>

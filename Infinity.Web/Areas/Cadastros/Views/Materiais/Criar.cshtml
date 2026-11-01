@@ -1,0 +1,62 @@
+@model Infinity.Web.Models.Material
+@{
+    ViewData["Title"] = "Novo Material";
+}
+<div class="page-header d-flex align-items-center">
+    <span class="page-octicon"><i class="bi bi-box-seam"></i></span>
+    <div>
+        <h3>Novo Material</h3>
+        <p class="page-subtitle">Cadastre um novo material de impressão</p>
+    </div>
+</div>
+<div class="card card-shadow">
+    <div class="card-body">
+        <form asp-action="Criar" method="post">
+            <div asp-validation-summary="ModelOnly" class="text-danger"></div>
+            <div class="row g-3">
+                <div class="col-md-6">
+                    <label asp-for="TipoMaterial" class="form-label"></label>
+                    <input asp-for="TipoMaterial" class="form-control" placeholder="Ex.: PLA, PETG, Resina..." />
+                    <span asp-validation-for="TipoMaterial" class="text-danger small"></span>
+                </div>
+                <div class="col-md-6">
+                    <label asp-for="Fornecedor" class="form-label"></label>
+                    <input asp-for="Fornecedor" class="form-control" />
+                    <span asp-validation-for="Fornecedor" class="text-danger small"></span>
+                </div>
+                <div class="col-md-4">
+                    <label asp-for="Valor" class="form-label">Valor (R$)</label>
+                    <div class="input-group">
+                        <span class="input-group-text">R$</span>
+                        <input asp-for="Valor" class="form-control" type="number" step="0.01" min="0" />
+                    </div>
+                    <span asp-validation-for="Valor" class="text-danger small"></span>
+                </div>
+                <div class="col-md-4">
+                    <label asp-for="PesoCompra" class="form-label">Quantidade Comprada (gramas)</label>
+                    <div class="input-group">
+                        <input asp-for="PesoCompra" class="form-control" type="number" step="0.01" min="0.001" />
+                        <span class="input-group-text">g</span>
+                    </div>
+                    <span asp-validation-for="PesoCompra" class="text-danger small"></span>
+                    <small class="form-text text-muted">Ex.: rolo de 1000 g</small>
+                </div>
+                <div class="col-md-4">
+                    <label asp-for="Cor" class="form-label"></label>
+                    <input asp-for="Cor" class="form-control" />
+                </div>
+                <div class="col-md-12">
+                    <label asp-for="Descricao" class="form-label"></label>
+                    <textarea asp-for="Descricao" class="form-control" rows="2"></textarea>
+                </div>
+            </div>
+            <div class="mt-4">
+                <button type="submit" class="btn btn-primary"><i class="bi bi-check-lg"></i> Salvar</button>
+                <a asp-action="Index" class="btn btn-secondary">Cancelar</a>
+            </div>
+        </form>
+    </div>
+</div>
+@section Scripts {
+    <partial name="_ValidationScriptsPartial" />
+}

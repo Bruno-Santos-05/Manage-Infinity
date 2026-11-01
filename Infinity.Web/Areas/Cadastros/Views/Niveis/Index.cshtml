@@ -1,0 +1,51 @@
+@model IEnumerable<Infinity.Web.Models.NivelDificuldade>
+@{
+    ViewData["Title"] = "Níveis de Dificuldade de Pintura";
+}
+<div class="page-header d-flex justify-content-between align-items-center flex-wrap gap-3">
+    <div class="d-flex align-items-center">
+        <span class="page-octicon"><i class="bi bi-brush"></i></span>
+        <div>
+            <h3>Níveis de Dificuldade de Pintura</h3>
+            <p class="page-subtitle">Cada nível possui um percentual de lucro próprio aplicado aos projetos com pintura</p>
+        </div>
+    </div>
+    <a class="btn btn-success" asp-action="Criar"><i class="bi bi-plus-lg"></i> Novo Nível</a>
+</div>
+
+<div class="card card-shadow">
+    <div class="table-responsive">
+        <table class="table table-striped table-hover align-middle mb-0">
+            <thead>
+                <tr>
+                    <th>Nível</th>
+                    <th>Descrição</th>
+                    <th class="text-end">Lucro (%)</th>
+                    <th class="text-end">Ações</th>
+                </tr>
+            </thead>
+            <tbody>
+                @foreach (var n in Model)
+                {
+                    <tr>
+                        <td class="fw-semibold">@n.Nome</td>
+                        <td>@n.Descricao</td>
+                        <td class="text-end">@n.LucroPercentual.ToString("0.##")%</td>
+                        <td class="text-end">
+                            <a class="btn btn-sm btn-warning" asp-action="Editar" asp-route-id="@n.Id"><i class="bi bi-pencil"></i> Editar</a>
+                            <form asp-action="Excluir" asp-route-id="@n.Id" method="post" class="d-inline"
+                                  onsubmit="return confirm('Excluir este nível?');">
+                                @Html.AntiForgeryToken()
+                                <button type="submit" class="btn btn-sm btn-danger"><i class="bi bi-trash"></i></button>
+                            </form>
+                        </td>
+                    </tr>
+                }
+            </tbody>
+        </table>
+    </div>
+</div>
+@if (!Model.Any())
+{
+    <p class="text-muted mt-3">Nenhum nível cadastrado.</p>
+}

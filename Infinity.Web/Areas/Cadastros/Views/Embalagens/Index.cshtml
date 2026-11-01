@@ -1,0 +1,115 @@
+@model IEnumerable<Infinity.Web.Models.Embalagem>
+@{
+    ViewData["Title"] = "Embalagens";
+}
+<div class="page-header d-flex justify-content-between align-items-center flex-wrap gap-3">
+    <div class="d-flex align-items-center">
+        <span class="page-octicon"><i class="bi bi-box2-heart"></i></span>
+        <div>
+            <h3>Embalagens</h3>
+            <p class="page-subtitle">Cadastro de caixas, sacolas, plástico bolha e itens de envio</p>
+        </div>
+    </div>
+    <div class="d-flex gap-2 flex-wrap">
+        <form method="get" class="d-flex gap-2">
+            <div class="input-group">
+                <span class="input-group-text bg-white"><i class="bi bi-search text-muted"></i></span>
+                <input type="text" name="busca" value="@ViewBag.Busca" class="form-control" placeholder="Buscar embalagem..." />
+            </div>
+            <button class="btn btn-outline-secondary" type="submit">Buscar</button>
+        </form>
+        <a class="btn btn-success" asp-action="Criar"><i class="bi bi-plus-lg"></i> Nova Embalagem</a>
+    </div>
+</div>
+
+<div class="card card-shadow">
+    <div class="table-responsive">
+        <table class="table table-striped table-hover align-middle mb-0">
+            <thead>
+                <tr>
+                    <th>Nome</th>
+                    <th class="text-end">Valor Unitário</th>
+                    <th>Status</th>
+                    <th class="text-end">Ações</th>
+                </tr>
+            </thead>
+            <tbody>
+                @foreach (var e in Model)
+                {
+                    <tr class="@(e.Ativo ? "" : "opacity-50")">
+                        <td class="fw-semibold">@e.Nome</td>
+                        <td class="text-end">@e.ValorUnitario.ToString("C")</td>
+                        <td>
+                            @if (e.Ativo)
+                            {
+                                <span class="badge bg-success"><i class="bi bi-check-circle"></i> Ativo</span>
+                            }
+                            else
+                            {
+                                <span class="badge bg-secondary"><i class="bi bi-dash-circle"></i> Desativado</span>
+                            }
+                        </td>
+                        <td class="text-end">
+                            <a class="btn btn-sm btn-warning" asp-action="Editar" asp-route-id="@e.Id"><i class="bi bi-pencil"></i> Editar</a>
+                            <button type="button"
+                                    class="btn btn-sm btn-danger"
+                                    title="Excluir permanentemente"
+                                    onclick="abrirModalExclusao(@e.Id, '@Html.Raw(System.Web.HttpUtility.JavaScriptStringEncode($"{e.Nome} ({e.ValorUnitario:C})"))')">
+                                <i class="bi bi-trash"></i>
+                            </button>
+                        </td>
+                    </tr>
+                }
+            </tbody>
+        </table>
+    </div>
+</div>
+@if (!Model.Any())
+{
+    <p class="text-muted mt-3">Nenhuma embalagem cadastrada.</p>
+}
+
+<!-- Modal moderno de confirmação de exclusão -->
+<div class="modal fade" id="modalConfirmarExclusao" tabindex="-1" aria-labelledby="modalExclusaoLabel" aria-hidden="true">
+    <div class="modal-dialog modal-dialog-centered">
+        <div class="modal-content border-0 shadow-lg" style="border-radius: 16px; overflow: hidden;">
+            <div class="modal-body p-4 text-center">
+                <div class="mx-auto mb-3 d-flex align-items-center justify-content-center rounded-circle"
+                     style="width: 68px; height: 68px; background-color: #fee2e2; color: #dc2626;">
+                    <i class="bi bi-exclamation-triangle-fill" style="font-size: 2rem;"></i>
+                </div>
+                <h5 class="fw-bold mb-2" id="modalExclusaoLabel" style="color: #1e293b;">Excluir Embalagem Permanentemente?</h5>
+                <p class="text-muted mb-2">
+                    Você está prestes a excluir de vez a embalagem:
+                </p>
+                <div class="p-2 mb-3 rounded fw-semibold" style="background-color: #f8fafc; color: #0f172a; border: 1px solid #e2e8f0;" id="nomeEmbalagemExclusao">
+                </div>
+                <p class="small text-danger mb-4">
+                    <i class="bi bi-info-circle me-1"></i>Esta ação apagará o registro definitivamente do banco de dados e não poderá ser desfeita.
+                </p>
+                <form id="formExcluirEmbalagem" asp-action="Excluir" method="post" class="d-flex gap-2 justify-content-center">
+                    @Html.AntiForgeryToken()
+                    <input type="hidden" name="id" id="idEmbalagemExclusao" value="" />
+                    <button type="button" class="btn btn-light px-4 fw-semibold" data-bs-dismiss="modal" style="border: 1px solid #cbd5e1;">
+                        Cancelar
+                    </button>
+                    <button type="submit" class="btn btn-danger px-4 fw-semibold shadow-sm">
+                        <i class="bi bi-trash3-fill me-1"></i> Sim, Excluir de Vez
+                    </button>
+                </form>
+            </div>
+        </div>
+    </div>
+</div>
+
+@section Scripts {
+    <script>
+        function abrirModalExclusao(id, nome) {
+            document.getElementById('idEmbalagemExclusao').value = id;
+            document.getElementById('nomeEmbalagemExclusao').textContent = nome;
+            var modalEl = document.getElementById('modalConfirmarExclusao');
+            var modal = bootstrap.Modal.getOrCreateInstance(modalEl);
+            modal.show();
+        }
+    </script>
+}

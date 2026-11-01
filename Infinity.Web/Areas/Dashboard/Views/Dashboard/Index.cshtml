@@ -1,0 +1,386 @@
+@model Infinity.Web.Areas.Dashboard.Controllers.DashboardVM
+@{
+    ViewData["Title"] = "Dashboard";
+}
+<div class="page-header d-flex align-items-center">
+    <span class="page-octicon"><i class="bi bi-speedometer2"></i></span>
+    <div>
+        <h3>Dashboard</h3>
+        <p class="page-subtitle">Visão geral do desempenho e rentabilidade dos seus projetos</p>
+    </div>
+</div>
+
+<!-- Cards resumo -->
+<div class="row g-3 mb-4">
+    <div class="col-md-3 col-6">
+        <div class="stat-card" style="background:linear-gradient(135deg,#6366f1,#4f46e5);">
+            <i class="bi bi-collection stat-icon"></i>
+            <div class="stat-value">@Model.TotalProjetos</div>
+            <div class="stat-label">Total de Projetos</div>
+        </div>
+    </div>
+    <div class="col-md-3 col-6">
+        <div class="stat-card" style="background:linear-gradient(135deg,#10b981,#059669);">
+            <i class="bi bi-check-circle stat-icon"></i>
+            <div class="stat-value">@Model.TotalPagos</div>
+            <div class="stat-label">Projetos Pagos</div>
+            <div class="stat-extra">@Model.TotalReceber a receber</div>
+        </div>
+    </div>
+    <div class="col-md-3 col-6">
+        <div class="stat-card" style="background:linear-gradient(135deg,#f59e0b,#d97706);">
+            <i class="bi bi-hourglass-split stat-icon"></i>
+            <div class="stat-value">@Model.TotalReceber</div>
+            <div class="stat-label">Projetos a Receber</div>
+        </div>
+    </div>
+    <div class="col-md-3 col-6">
+        <div class="stat-card" style="background:linear-gradient(135deg,#ec4899,#db2777);">
+            <i class="bi bi-cash-coin stat-icon"></i>
+            <div class="stat-value">@Model.TotalLucroReal.ToString("C")</div>
+            <div class="stat-label">Lucro Real</div>
+            <div class="stat-extra">estimado @Model.TotalLucroEstimado.ToString("C")</div>
+        </div>
+    </div>
+</div>
+
+<div class="row g-4">
+    <!-- Mais lucrativos -->
+    <div class="col-lg-6">
+        <div class="card card-shadow">
+            <div class="card-header fw-bold"><i class="bi bi-trophy"></i> Projetos Mais Lucrativos</div>
+            <div class="table-responsive">
+                <table class="table table-striped align-middle mb-0">
+                    <thead>
+                        <tr>
+                            <th>Projeto</th>
+                            <th>Grupo</th>
+                            <th class="text-end">Custo Real</th>
+                            <th class="text-end">Lucro Est.</th>
+                            <th class="text-end">Lucro Real</th>
+                        </tr>
+                    </thead>
+                    <tbody>
+                        @foreach (var r in Model.MaisLucrativos)
+                        {
+                            <tr>
+                                <td>@r.Projeto.Nome</td>
+                                <td><span class="badge bg-info text-dark">@r.GrupoNome</span></td>
+                                <td class="text-end">@r.Financeiro.CustoTotalReal.ToString("C")</td>
+                                <td class="text-end"><span class="badge @(r.Financeiro.LucroEstimado >= 0 ? "bg-success" : "bg-danger")">@r.Financeiro.LucroEstimado.ToString("C")</span></td>
+                                <td class="text-end"><span class="badge @(r.Financeiro.LucroReal >= 0 ? "bg-primary" : "bg-danger")">@r.Financeiro.LucroReal.ToString("C")</span></td>
+                            </tr>
+                        }
+                    </tbody>
+                </table>
+            </div>
+            @if (!Model.MaisLucrativos.Any()) { <p class="p-3 text-muted mb-0">Sem dados.</p> }
+        </div>
+    </div>
+
+    <!-- Por grupo -->
+    <div class="col-lg-6">
+        <div class="card card-shadow">
+            <div class="card-header fw-bold"><i class="bi bi-collection"></i> Lucro por Grupo de Projeto</div>
+            <div class="table-responsive">
+                <table class="table table-striped align-middle mb-0">
+                    <thead>
+                        <tr>
+                            <th>Grupo</th>
+                            <th class="text-end">Projetos</th>
+                            <th class="text-end">Custo Real</th>
+                            <th class="text-end">Venda</th>
+                            <th class="text-end">Lucro Real</th>
+                        </tr>
+                    </thead>
+                    <tbody>
+                        @foreach (var g in Model.PorGrupo)
+                        {
+                            <tr>
+                                <td>
+                                    <span class="fw-semibold">@g.NomeGrupo</span>
+                                    <div class="small text-muted">#1: @g.MaisLucrativo <span class="text-secondary">(est. @g.TotalLucroEstimado.ToString("C"))</span></div>
+                                </td>
+                                <td class="text-end">@g.TotalProjetos</td>
+                                <td class="text-end">@g.TotalCusto.ToString("C")</td>
+                                <td class="text-end">@g.TotalVenda.ToString("C")</td>
+                                <td class="text-end">
+                                    <span class="badge @(g.TotalLucro >= 0 ? "bg-success" : "bg-danger")">@g.TotalLucro.ToString("C")</span>
+                                </td>
+                            </tr>
+                        }
+                    </tbody>
+                </table>
+            </div>
+            @if (!Model.PorGrupo.Any()) { <p class="p-3 text-muted mb-0">Sem dados.</p> }
+        </div>
+    </div>
+</div>
+
+<!-- Maior diferença Real x Estimado -->
+<div class="row g-4 mt-0">
+    <div class="col-12">
+        <div class="card card-shadow">
+            <div class="card-header fw-bold"><i class="bi bi-arrow-left-right"></i> Projetos com Maior Diferença entre Gasto Real e Estimado</div>
+            <div class="table-responsive">
+                <table class="table table-striped align-middle mb-0">
+                    <thead>
+                        <tr>
+                            <th>Projeto</th>
+                            <th>Grupo</th>
+                            <th class="text-end">Custo Est.</th>
+                            <th class="text-end">Custo Real</th>
+                            <th class="text-end">Diferença</th>
+                        </tr>
+                    </thead>
+                    <tbody>
+                        @foreach (var d in Model.MaiorDistanciaCusto)
+                        {
+                            var diff = d.Financeiro.DiffCusto;
+                            <tr>
+                                <td class="fw-semibold">@d.Projeto.Nome</td>
+                                <td><span class="badge bg-info text-dark">@d.GrupoNome</span></td>
+                                <td class="text-end">@d.Financeiro.CustoTotalEstimado.ToString("C")</td>
+                                <td class="text-end">@d.Financeiro.CustoTotalReal.ToString("C")</td>
+                                <td class="text-end">
+                                    <span class="badge @(diff >= 0 ? "bg-danger" : "bg-success")">@(diff >= 0 ? "+" : "-")@Math.Abs(diff).ToString("C")</span>
+                                </td>
+                            </tr>
+                        }
+                    </tbody>
+                </table>
+            </div>
+            @if (!Model.MaiorDistanciaCusto.Any()) { <p class="p-3 text-muted mb-0">Sem dados.</p> }
+        </div>
+    </div>
+</div>
+
+<!-- Maior diferença entre lucro real e estimado -->
+<div class="row g-4 mt-0">
+    <div class="col-12">
+        <div class="card card-shadow">
+            <div class="card-header fw-bold"><i class="bi bi-arrow-down-up"></i> Projetos com Maior Diferença entre Lucro Real e Lucro Estimado</div>
+            <div class="table-responsive">
+                <table class="table table-striped align-middle mb-0">
+                    <thead>
+                        <tr>
+                            <th>Projeto</th>
+                            <th>Grupo</th>
+                            <th class="text-end">Lucro Estimado</th>
+                            <th class="text-end">Lucro Real</th>
+                            <th class="text-end">Diferença</th>
+                        </tr>
+                    </thead>
+                    <tbody>
+                        @foreach (var d in Model.MaiorDistanciaLucro)
+                        {
+                            var diff = d.Financeiro.DiffLucro;
+                            <tr>
+                                <td class="fw-semibold">@d.Projeto.Nome</td>
+                                <td><span class="badge bg-info text-dark">@d.GrupoNome</span></td>
+                                <td class="text-end">@d.Financeiro.LucroEstimado.ToString("C")</td>
+                                <td class="text-end">@d.Financeiro.LucroReal.ToString("C")</td>
+                                <td class="text-end">
+                                    <span class="badge @(diff >= 0 ? "text-success" : "text-danger")">@(diff >= 0 ? "+" : "-")@Math.Abs(diff).ToString("C")</span>
+                                </td>
+                            </tr>
+                        }
+                    </tbody>
+                </table>
+            </div>
+            @if (!Model.MaiorDistanciaLucro.Any()) { <p class="p-3 text-muted mb-0">Sem dados.</p> }
+        </div>
+    </div>
+</div>
+
+<div class="row g-4">
+    <!-- Mais vendem material -->
+    <div class="col-lg-6">
+        <div class="card card-shadow">
+            <div class="card-header fw-bold"><i class="bi bi-box-seam"></i> Projetos que Mais Consomem Material (Qtd)</div>
+            <div class="table-responsive">
+                <table class="table table-striped align-middle mb-0">
+                    <thead>
+                        <tr>
+                            <th>Projeto</th>
+                            <th>Grupo</th>
+                            <th class="text-end">Qtd Est.</th>
+                            <th class="text-end">Qtd Real</th>
+                        </tr>
+                    </thead>
+                    <tbody>
+                        @foreach (var m in Model.MaisVendemMaterial)
+                        {
+                            <tr>
+                                <td>@m.ProjetoNome</td>
+                                <td><span class="badge bg-info text-dark">@m.GrupoNome</span></td>
+                                <td class="text-end">@m.QuantidadeEstimada.ToString("0.##")</td>
+                                <td class="text-end">@m.QuantidadeReal.ToString("0.##")</td>
+                            </tr>
+                        }
+                    </tbody>
+                </table>
+            </div>
+            @if (!Model.MaisVendemMaterial.Any()) { <p class="p-3 text-muted mb-0">Sem dados.</p> }
+        </div>
+    </div>
+
+    <!-- Materiais mais usados -->
+    <div class="col-lg-6">
+        <div class="card card-shadow">
+            <div class="card-header fw-bold"><i class="bi bi-pie-chart"></i> Materiais Mais Utilizados (Qtd Total)</div>
+            <div class="table-responsive">
+                <table class="table table-striped align-middle mb-0">
+                    <thead>
+                        <tr>
+                            <th>Material</th>
+                            <th class="text-end">Quantidade Total</th>
+                            <th style="width:40%;">Participação</th>
+                        </tr>
+                    </thead>
+                    <tbody>
+                        @{
+                            var totalMat = Model.MateriaisMaisUsados.Sum(x => x.QuantidadeEstimada);
+                        }
+                        @foreach (var m in Model.MateriaisMaisUsados)
+                        {
+                            var pct = totalMat > 0 ? (m.QuantidadeEstimada / totalMat) * 100 : 0;
+                            <tr>
+                                <td class="fw-semibold">@m.ProjetoNome</td>
+                                <td class="text-end">@m.QuantidadeEstimada.ToString("0.##")</td>
+                                <td>
+                                    <div class="progress" style="height:14px;">
+                                        <div class="progress-bar" style="width:@(pct)%">@pct.ToString("0")%</div>
+                                    </div>
+                                </td>
+                            </tr>
+                        }
+                    </tbody>
+                </table>
+            </div>
+            @if (!Model.MateriaisMaisUsados.Any()) { <p class="p-3 text-muted mb-0">Sem dados.</p> }
+        </div>
+    </div>
+
+    <!-- Gráficos: Lucro por grupo e Origem -->
+    <div class="col-lg-6">
+        <div class="card card-shadow">
+            <div class="card-header fw-bold"><i class="bi bi-bar-chart"></i> Lucro Real por Grupo (Gráfico)</div>
+            <div class="card-body">
+                <canvas id="graficoGrupo" height="220"></canvas>
+            </div>
+        </div>
+    </div>
+    <div class="col-lg-6">
+        <div class="card card-shadow">
+            <div class="card-header fw-bold">
+                <div class="d-flex justify-content-between align-items-center">
+                    <span><i class="bi bi-signpost-split"></i> Nos Conheceu Por Onde?</span>
+                    <a class="btn btn-sm btn-outline-success" asp-action="ExportarOrigensExcel"><i class="bi bi-file-earmark-excel"></i> Excel</a>
+                </div>
+            </div>
+            <div class="card-body">
+                <canvas id="graficoOrigem" height="180"></canvas>
+                <hr />
+                <div class="table-responsive">
+                    <table class="table table-sm table-striped align-middle mb-0">
+                        <thead>
+                            <tr><th>Origem</th><th class="text-end">Qtd Clientes</th></tr>
+                        </thead>
+                        <tbody>
+                            @foreach (var o in Model.Origens)
+                            {
+                                <tr>
+                                    <td class="fw-semibold">@o.NomeOrigem</td>
+                                    <td class="text-end">@o.Quantidade</td>
+                                </tr>
+                            }
+                        </tbody>
+                    </table>
+                </div>
+                @if (!Model.Origens.Any()) { <p class="text-muted mt-2 mb-0">Sem dados sobre origens dos clientes.</p> }
+            </div>
+        </div>
+    </div>
+</div>
+
+<!-- TOP 5 materiais com maior lucro real -->
+<div class="row g-4 mt-0">
+    <div class="col-12">
+        <div class="card card-shadow">
+            <div class="card-header fw-bold"><i class="bi bi-trophy"></i> TOP 5 Materiais com Maior Lucro Real</div>
+            <div class="table-responsive">
+                <table class="table table-striped align-middle mb-0">
+                    <thead>
+                        <tr>
+                            <th>#</th>
+                            <th>Material</th>
+                            <th class="text-end">Projetos</th>
+                            <th class="text-end">Qtd Real (g)</th>
+                            <th class="text-end">Lucro Real</th>
+                        </tr>
+                    </thead>
+                    <tbody>
+                        @{
+                            var posicao = 1;
+                        }
+                        @foreach (var m in Model.MateriaisMaisLucrativos)
+                        {
+                            <tr>
+                                <td class="fw-bold text-muted">@posicao</td>
+                                <td class="fw-semibold">@m.NomeMaterial</td>
+                                <td class="text-end">@m.TotalProjetos</td>
+                                <td class="text-end">@m.QuantidadeReal.ToString("0.##")</td>
+                                <td class="text-end"><span class="badge bg-success">@m.LucroReal.ToString("C")</span></td>
+                            </tr>
+                            posicao++;
+                        }
+                    </tbody>
+                </table>
+            </div>
+            @if (!Model.MateriaisMaisLucrativos.Any()) { <p class="p-3 text-muted mb-0">Sem dados.</p> }
+        </div>
+    </div>
+</div>
+
+    <script src="https://cdn.jsdelivr.net/npm/chart.js@4.4.1/dist/chart.umd.min.js"></script>
+    <script>
+        (function () {
+            const cores = ['#3498db', '#27ae60', '#e67e22', '#8e44ad', '#e74c3c', '#f1c40f', '#16a085', '#2c3e50', '#d35400', '#7f8c8d'];
+
+            // Gráfico 1: Lucro real por grupo
+            @if (Model.PorGrupo.Any())
+            {
+                <text>
+                const nomesGrupo = @Html.Raw(System.Text.Json.JsonSerializer.Serialize(Model.PorGrupo.Select(g => g.NomeGrupo)));
+                const lucroGrupo = @Html.Raw(System.Text.Json.JsonSerializer.Serialize(Model.PorGrupo.Select(g => (double)g.TotalLucro)));
+                new Chart(document.getElementById('graficoGrupo'), {
+                    type: 'bar',
+                    data: {
+                        labels: nomesGrupo,
+                        datasets: [{ label: 'Lucro Real (R$)', data: lucroGrupo, backgroundColor: cores }]
+                    },
+                    options: { responsive: true, plugins: { legend: { display: false } } }
+                });
+                </text>
+            }
+
+            // Gráfico 2: Origens dos clientes
+            @if (Model.Origens.Any())
+            {
+                <text>
+                const nomesOrigem = @Html.Raw(System.Text.Json.JsonSerializer.Serialize(Model.Origens.Select(o => o.NomeOrigem)));
+                const qtdOrigem = @Html.Raw(System.Text.Json.JsonSerializer.Serialize(Model.Origens.Select(o => o.Quantidade)));
+                new Chart(document.getElementById('graficoOrigem'), {
+                    type: 'doughnut',
+                    data: {
+                        labels: nomesOrigem,
+                        datasets: [{ data: qtdOrigem, backgroundColor: cores }]
+                    },
+                    options: { responsive: true, plugins: { legend: { position: 'bottom' } } }
+                });
+                </text>
+            }
+        })();
+    </script>
+}

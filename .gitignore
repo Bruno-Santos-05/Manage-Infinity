@@ -1,0 +1,36 @@
+## Compilação e Binários do .NET
+[Bb]in/
+[Oo]bj/
+[Ll]og/
+[Ll]ogs/
+
+## Visual Studio / VS Code
+.vs/
+.vscode/
+*.suo
+*.user
+*.userosscache
+*.sln.docstates
+*.ide/
+
+## Arquivos de ambiente e segredos locais (opcional, ajuste se necessário)
+appsettings.Development.json
+*.local.json
+
+## Publicações e builds
+[Pp]ublish/
+publish/
+
+## Outros temporários do Windows e pacotes
+Thumbs.db
+ehthumbs.db
+[Dd]esktop.ini
+$RECYCLE.BIN/
+*.DotSettings.user
+*.nupkg
+packages/
+
+## Bancos de dados locais / SQLite
+*.db
+*.db-shm
+*.db-wal

@@ -1,0 +1,47 @@
+@model Infinity.Web.Models.Cliente
+@{
+    ViewData["Title"] = "Novo Cliente";
+}
+<div class="page-header d-flex align-items-center">
+    <span class="page-octicon"><i class="bi bi-person-plus"></i></span>
+    <div>
+        <h3>Novo Cliente</h3>
+        <p class="page-subtitle">Cadastre um novo cliente</p>
+    </div>
+</div>
+<div class="card card-shadow">
+    <div class="card-body">
+        <form asp-action="Criar" method="post">
+            <div asp-validation-summary="ModelOnly" class="text-danger"></div>
+            <div class="row g-3">
+                <div class="col-md-6">
+                    <label asp-for="NomeCompleto" class="form-label"></label>
+                    <input asp-for="NomeCompleto" class="form-control" />
+                    <span asp-validation-for="NomeCompleto" class="text-danger small"></span>
+                </div>
+                <div class="col-md-6">
+                    <label asp-for="NumeroCelular" class="form-label"></label>
+                    <input asp-for="NumeroCelular" class="form-control" placeholder="(11) 91234-5678" />
+                </div>
+                <div class="col-md-6">
+                    <label asp-for="OrigemId" class="form-label">Nos Conheceu Por Onde?</label>
+                    <select asp-for="OrigemId" class="form-select" asp-items="ViewBag.Origens as Microsoft.AspNetCore.Mvc.Rendering.SelectList">
+                        <option value="">-- Selecione --</option>
+                    </select>
+                    @* Exclui Origem e OrigemId da validação exigida *@
+                </div>
+                <div class="col-md-12">
+                    <label asp-for="Obs" class="form-label"></label>
+                    <textarea asp-for="Obs" class="form-control" rows="3"></textarea>
+                </div>
+            </div>
+            <div class="mt-4">
+                <button type="submit" class="btn btn-primary"><i class="bi bi-check-lg"></i> Salvar</button>
+                <a asp-action="Index" class="btn btn-secondary">Cancelar</a>
+            </div>
+        </form>
+    </div>
+</div>
+@section Scripts {
+    <partial name="_ValidationScriptsPartial" />
+}

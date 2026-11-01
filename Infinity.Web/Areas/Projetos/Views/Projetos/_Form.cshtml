@@ -1,0 +1,586 @@
+@model Infinity.Web.Models.ProjetoViewModel
+@{
+    // Mapa dos materiais já selecionados (para re-selecionar no select)
+    var materiaisSelecionados = Model.Materiais ?? new List<ProjetoMaterialViewModel>();
+    var mapaSelecionado = materiaisSelecionados.Where(m => m.MaterialId > 0)
+        .ToDictionary(m => m.MaterialId.ToString(), m => m.Quantidade);
+    var embalagensSelecionadas = Model.Embalagens ?? new List<ProjetoEmbalagemViewModel>();
+}
+
+<script>
+    window.__mapaSelecionado = @Html.Raw(System.Text.Json.JsonSerializer.Serialize(mapaSelecionado));
+    window.__proxIndice = @materiaisSelecionados.Count;
+    window.__proxIndiceEmb = @embalagensSelecionadas.Count;
+    // IMPORTANTE: usar chaves minúsculas (value/text/preco) no objeto para o JS acessar corretamente.
+    window.__materiaisOpcoes = @Html.Raw(System.Text.Json.JsonSerializer.Serialize(
+        Model.MateriaisDisponiveis.Select(m => new { value = m.Value, text = m.Text })));
+    window.__materiaisPrecos = @Html.Raw(System.Text.Json.JsonSerializer.Serialize(Model.MateriaisPrecos));
+    window.__embalagensOpcoes = @Html.Raw(System.Text.Json.JsonSerializer.Serialize(
+        Model.EmbalagensDisponiveis.Select(e => new { value = e.Value, text = e.Text })));
+    window.__embalagensPrecos = @Html.Raw(System.Text.Json.JsonSerializer.Serialize(Model.EmbalagensPrecos));
+    window.__niveisPct = @Html.Raw(System.Text.Json.JsonSerializer.Serialize(Model.NiveisPct));
+</script>
+
+<div asp-validation-summary="All" class="text-danger mb-3"></div>
+
+<div class="row g-4">
+    <!-- DADOS BÁSICOS -->
+    <div class="col-lg-6">
+        <div class="card card-shadow h-100">
+            <div class="card-header fw-bold">Dados Gerais</div>
+            <div class="card-body">
+                <div class="mb-3">
+                    <label asp-for="Nome" class="form-label"></label>
+                    <input asp-for="Nome" class="form-control" />
+                    <span asp-validation-for="Nome" class="text-danger small"></span>
+                </div>
+                <div class="mb-3">
+                    <label asp-for="Descricao" class="form-label"></label>
+                    <textarea asp-for="Descricao" class="form-control" rows="3" placeholder="Descreva o projeto (opcional)"></textarea>
+                </div>
+                <div class="mb-3">
+                    <label asp-for="GrupoId" class="form-label">Grupo do Projeto</label>
+                    <select asp-for="GrupoId" asp-items="Model.Grupos" class="form-select">
+                        <option value="">-- Selecione --</option>
+                    </select>
+                </div>
+                <div class="row g-3">
+                    <div class="col-6">
+                        <label asp-for="HorasEstimadas" class="form-label"></label>
+                        <input asp-for="HorasEstimadas" class="form-control custo-horas-est" type="number" step="0.01" min="0" />
+                    </div>
+                    <div class="col-6">
+                        <label asp-for="QtdMaterialEstimada" class="form-label"></label>
+                        <input id="QtdMaterialEstimada" class="form-control" type="text" readonly
+                               aria-describedby="qtdInfo" value="@Model.QtdMaterialEstimada.ToString("0.###")" />
+                        <small id="qtdInfo" class="form-text text-muted">Automático: soma das quantidades dos materiais.</small>
+                    </div>
+                </div>
+            </div>
+        </div>
+    </div>
+
+    <!-- CLIENTES -->
+    <div class="col-lg-6">
+        <div class="card card-shadow h-100">
+            <div class="card-header fw-bold">Cliente(s) <small class="text-muted">(pode selecionar mais de um)</small></div>
+            <div class="card-body">
+                <div class="mb-2">
+                    <input type="text" id="buscaCliente" class="form-control form-control-sm"
+                           placeholder="🔍 Buscar cliente pelo nome..." aria-label="Buscar cliente" />
+                </div>
+                <div class="mb-2 d-flex justify-content-between">
+                    <div>
+                        <a class="btn btn-sm btn-link p-0" href="javascript:void(0)" onclick="marcarTodos(true)">Marcar todos</a> ·
+                        <a class="btn btn-sm btn-link p-0" href="javascript:void(0)" onclick="marcarTodos(false)">Desmarcar todos</a>
+                    </div>
+                    <small class="text-muted" id="resBuscaCliente"></small>
+                </div>
+                <div class="card-body p-0" style="max-height:280px;overflow-y:auto;border:1px solid #dee2e6;border-radius:.375rem;padding:.5rem !important;" id="listaClientes">
+                    @for (int i = 0; i < Model.Clientes.Count; i++)
+                    {
+                        var cli = Model.Clientes[i];
+                        var checado = Model.ClienteIds.Contains(int.Parse(cli.Value));
+                        <div class="form-check item-cliente" data-nome="@cli.Text.ToLower()">
+                            <input class="form-check-input cliente-chk" type="checkbox"
+                                   name="ClienteIds" value="@cli.Value" id="cli-@cli.Value"
+                                   @(checado ? "checked" : "") />
+                            <label class="form-check-label" for="cli-@cli.Value">@cli.Text</label>
+                        </div>
+                    }
+                </div>
+                <span asp-validation-for="ClienteIds" class="text-danger small"></span>
+            </div>
+        </div>
+    </div>
+
+    <!-- MATERIAIS -->
+    <div class="col-lg-6">
+        <div class="card card-shadow h-100">
+            <div class="card-header fw-bold d-flex justify-content-between align-items-center">
+                <span>Materiais Utilizados</span>
+                <button type="button" class="btn btn-sm btn-outline-primary" onclick="adicionarMaterial()"><i class="bi bi-plus-lg"></i> Adicionar</button>
+            </div>
+            <div class="card-body">
+                <div id="materiais-container">
+                    @for (int i = 0; i < materiaisSelecionados.Count; i++)
+                    {
+                        var m = materiaisSelecionados[i];
+                        <div class="row g-2 mb-2 material-linha">
+                            <div class="col-7">
+                                <select class="form-select material-select" name="Materiais[@i].MaterialId">
+                                    <option value="0">-- Selecione --</option>
+                                    @foreach (var mm in Model.MateriaisDisponiveis)
+                                    {
+                                        <option value="@mm.Value" selected="@(mm.Value == m.MaterialId.ToString())">@mm.Text</option>
+                                    }
+                                </select>
+                            </div>
+                            <div class="col-4">
+                                <div class="input-group">
+                                    <input class="form-control material-qtd" name="Materiais[@i].Quantidade" type="number" step="0.01" min="0"
+                                           placeholder="Gramas" aria-label="Quantidade em gramas" value="@m.Quantidade.ToString("0.####", System.Globalization.CultureInfo.InvariantCulture)" />
+                                    <span class="input-group-text">g</span>
+                                </div>
+                            </div>
+                            <div class="col-1 d-grid">
+                                <button type="button" class="btn btn-outline-danger btn-sm" onclick="removerMaterial(this)"><i class="bi bi-x-lg"></i></button>
+                            </div>
+                        </div>
+                    }
+                </div>
+                <span asp-validation-for="Materiais" class="text-danger small"></span>
+                <div class="form-text text-muted small mt-2">
+                    <i class="bi bi-info-circle"></i> A quantidade do material é em <strong>gramas (g)</strong>.
+                    O custo é calculado automaticamente: <strong>gramas × R$/g</strong> do material
+                    (ex.: 250 g de um material de R$ 1,00/g = R$ 250,00).
+                </div>
+            </div>
+        </div>
+    </div>
+
+    <!-- EMBALAGENS -->
+    <div class="col-lg-6">
+        <div class="card card-shadow h-100">
+            <div class="card-header fw-bold d-flex justify-content-between align-items-center">
+                <span><i class="bi bi-box2-heart me-1"></i> Embalagens Utilizadas <small class="text-muted fw-normal">(opcional)</small></span>
+                <button type="button" class="btn btn-sm btn-outline-primary" onclick="adicionarEmbalagem()"><i class="bi bi-plus-lg"></i> Adicionar</button>
+            </div>
+            <div class="card-body">
+                <div id="embalagens-container">
+                    @for (int i = 0; i < embalagensSelecionadas.Count; i++)
+                    {
+                        var e = embalagensSelecionadas[i];
+                        <div class="row g-2 mb-2 embalagem-linha">
+                            <div class="col-7">
+                                <select class="form-select embalagem-select" name="Embalagens[@i].EmbalagemId">
+                                    <option value="0">-- Selecione --</option>
+                                    @foreach (var ee in Model.EmbalagensDisponiveis)
+                                    {
+                                        <option value="@ee.Value" selected="@(ee.Value == e.EmbalagemId.ToString())">@ee.Text</option>
+                                    }
+                                </select>
+                            </div>
+                            <div class="col-4">
+                                <div class="input-group">
+                                    <input class="form-control embalagem-qtd" name="Embalagens[@i].Quantidade" type="number" step="1" min="1"
+                                           placeholder="Qtd" aria-label="Quantidade de embalagens" value="@e.Quantidade.ToString("0.####", System.Globalization.CultureInfo.InvariantCulture)" />
+                                    <span class="input-group-text">un</span>
+                                </div>
+                            </div>
+                            <div class="col-1 d-grid">
+                                <button type="button" class="btn btn-outline-danger btn-sm" onclick="removerEmbalagem(this)"><i class="bi bi-x-lg"></i></button>
+                            </div>
+                        </div>
+                    }
+                </div>
+                <div class="form-text text-muted small mt-2">
+                    <i class="bi bi-info-circle"></i> Selecione uma ou mais embalagens cadastradas. O valor unitário × quantidade será somado automaticamente ao custo do projeto.
+                </div>
+            </div>
+        </div>
+    </div>
+
+    <!-- PINTURA / PAGAMENTO / ENTREGA -->
+    <div class="col-lg-6">
+        <div class="card card-shadow h-100">
+            <div class="card-header fw-bold">Pintura, Pagamento e Entrega</div>
+            <div class="card-body">
+                <div class="form-check form-switch mb-3">
+                    <input asp-for="Pintura" class="form-check-input" type="checkbox" id="chkPintura" />
+                    <label asp-for="Pintura" class="form-check-label">Pintura</label>
+                </div>
+                <div id="divNivel" class="mb-3 @(Model.Pintura ? "" : "d-none")">
+                    <label asp-for="NivelDificuldadeId" class="form-label"></label>
+                    <select asp-for="NivelDificuldadeId" asp-items="Model.Niveis" class="form-select">
+                        <option value="">-- Selecione --</option>
+                    </select>
+                </div>
+
+                <div class="form-check form-switch mb-3">
+                    <input asp-for="Pago" class="form-check-input" type="checkbox" />
+                    <label asp-for="Pago" class="form-check-label">Pago</label>
+                </div>
+                <div class="mb-3">
+                    <label asp-for="MetodoPagamento" class="form-label"></label>
+                    <select asp-for="MetodoPagamento" class="form-select">
+                        <option value="">-- Selecione --</option>
+                        <option value="CARTÃO">Cartão</option>
+                        <option value="PIX">PIX</option>
+                        <option value="DINHEIRO">Dinheiro</option>
+                    </select>
+                </div>
+
+                <div class="form-check form-switch mb-3">
+                    <input asp-for="Entrega" class="form-check-input" type="checkbox" id="chkEntrega" />
+                    <label asp-for="Entrega" class="form-check-label">Entrega</label>
+                </div>
+                <div id="divFrete" class="@(Model.Entrega ? "" : "d-none")">
+                    <label asp-for="ValorFrete" class="form-label">Valor do Frete (R$)</label>
+                    <input asp-for="ValorFrete" class="form-control" type="number" step="0.01" min="0" />
+                </div>
+            </div>
+        </div>
+    </div>
+
+    <!-- REALIZADO E CONFIGURAÇÃO FINANCEIRA -->
+    <div class="col-lg-6">
+        <div class="card card-shadow mb-4">
+            <div class="card-header fw-bold">Dados Reais</div>
+            <div class="card-body">
+                <div class="row g-3">
+                    <div class="col-6">
+                        <label asp-for="HorasReais" class="form-label"></label>
+                        <input asp-for="HorasReais" class="form-control" type="number" step="0.01" min="0" />
+                    </div>
+                    <div class="col-6">
+                        <label asp-for="MaterialReal" class="form-label"></label>
+                        <input asp-for="MaterialReal" class="form-control" type="number" step="0.01" min="0" />
+                    </div>
+                </div>
+            </div>
+        </div>
+
+        <div class="card card-shadow">
+            <div class="card-header fw-bold">Configuração Financeira</div>
+            <div class="card-body">
+                <div class="row g-3">
+                    <div class="col-6">
+                        <label asp-for="LucroDesejadoPercentual" class="form-label">Lucro Desejado (%)</label>
+                        <div class="input-group">
+                            <input asp-for="LucroDesejadoPercentual" class="form-control" type="number" step="0.01" min="0" />
+                            <span class="input-group-text">%</span>
+                        </div>
+                    </div>
+                    <div class="col-6">
+                        <label asp-for="ValorHoraMaquina" class="form-label">Valor da Hora Máquina (R$)</label>
+                        <div class="input-group">
+                            <span class="input-group-text">R$</span>
+                            <input asp-for="ValorHoraMaquina" class="form-control" type="number" step="0.01" min="0" />
+                        </div>
+                    </div>
+                </div>
+            </div>
+        </div>
+    </div>
+
+    <!-- PREVISÃO DE CUSTOS (ao vivo) -->
+    <div class="col-12">
+        <div class="card card-shadow">
+            <div class="card-header fw-bold"><i class="bi bi-calculator"></i> Previsão de Custos ao Vivo</div>
+            <div class="card-body">
+                <div class="row g-3">
+                    <div class="col-md-4">
+                        <h6 class="text-muted">Material e Embalagens</h6>
+                        <table class="table table-sm mb-0">
+                            <tbody>
+                                <tr><td class="ps-0">Custo Material <strong>Estimado</strong></td>
+                                    <td class="text-end fw-bold" id="prev-custoMatEst">R$ 0,00</td></tr>
+                                <tr><td class="ps-0">Custo Material <strong>Real</strong> <small class="text-muted">(conforme Material Real)</small></td>
+                                    <td class="text-end fw-bold" id="prev-custoMatReal">R$ 0,00</td></tr>
+                                <tr><td class="ps-0">Custo <strong>Embalagens</strong></td>
+                                    <td class="text-end fw-bold" id="prev-custoEmb">R$ 0,00</td></tr>
+                            </tbody>
+                        </table>
+                    </div>
+                    <div class="col-md-4">
+                        <h6 class="text-muted">Hora Máquina (R$ @(Model.ValorHoraMaquina?.ToString("0.##")))</h6>
+                        <table class="table table-sm mb-0">
+                            <tbody>
+                                <tr><td class="ps-0">Custo Hora <strong>Estimado</strong> <small class="text-muted">(Horas Estimadas)</small></td>
+                                    <td class="text-end fw-bold" id="prev-custoHoraEst">R$ 0,00</td></tr>
+                                <tr><td class="ps-0">Custo Hora <strong>Real</strong> <small class="text-muted">(Horas Reais)</small></td>
+                                    <td class="text-end fw-bold" id="prev-custoHoraReal">R$ 0,00</td></tr>
+                            </tbody>
+                        </table>
+                    </div>
+                    <div class="col-md-4">
+                        <h6 class="text-muted">Material + Hora Máquina</h6>
+                        <table class="table table-sm mb-0">
+                            <tbody>
+                                <tr><td class="ps-0">Soma <strong>Estimada</strong></td>
+                                    <td class="text-end fw-bold" id="prev-somaEst">R$ 0,00</td></tr>
+                                <tr><td class="ps-0">Soma <strong>Real</strong></td>
+                                    <td class="text-end fw-bold" id="prev-somaReal">R$ 0,00</td></tr>
+                                <tr><td class="ps-0">Diferença (Real - Est.)</td>
+                                    <td class="text-end fw-bold" id="prev-somaDiff">R$ 0,00</td></tr>
+                            </tbody>
+                        </table>
+                    </div>
+                </div>
+                <hr />
+                <div class="row g-3">
+                    <div class="col-md-6">
+                        <table class="table table-sm mb-0">
+                            <tbody>
+                                <tr><td class="ps-0">Custo Total <strong>Estimado</strong></td>
+                                    <td class="text-end fw-bold" id="prev-custoTotalEst">R$ 0,00</td></tr>
+                                <tr><td class="ps-0">Lucro Desejado (%)</td>
+                                    <td class="text-end fw-bold" id="prev-lucroPct">0%</td></tr>
+                                <tr><td class="ps-0">Lucro da Pintura (%)</td>
+                                    <td class="text-end fw-bold" id="prev-pinturaPct">0%</td></tr>
+                            </tbody>
+                        </table>
+                    </div>
+                    <div class="col-md-6 d-flex align-items-center">
+                        <div class="w-100 alert alert-success mb-0">
+                            <div class="small text-muted">Quanto cobrar pelo projeto (estimativa)</div>
+                            <div class="fs-3 fw-bold" id="prev-precoCobrar">R$ 0,00</div>
+                            <div class="small text-muted">Base: custo estimado × (1 + lucro desejado) × (1 + lucro da pintura)</div>
+                        </div>
+                    </div>
+                </div>
+                <div class="mt-3 text-muted small">
+                    <i class="bi bi-info-circle"></i> Os cálculos acima são atualizados automaticamente ao adicionar materiais/embalagens e ao preencher as quantidades (estimadas/real).
+                </div>
+            </div>
+        </div>
+    </div>
+</div>
+
+<div class="mt-4">
+    <button type="submit" class="btn btn-primary btn-lg"><i class="bi bi-check-lg"></i> Salvar Projeto</button>
+    <a asp-action="Index" class="btn btn-secondary btn-lg">Cancelar</a>
+</div>
+
+<script>
+    let indices = window.__proxIndice;
+    let indicesEmb = window.__proxIndiceEmb;
+
+    function adicionarMaterial() {
+        const container = document.getElementById('materiais-container');
+        const linha = document.createElement('div');
+        linha.className = 'row g-2 mb-2 material-linha';
+        const opts = window.__materiaisOpcoes.map(o =>
+            '<option value="' + o.value + '">' + o.text + '</option>').join('');
+        linha.innerHTML =
+            '<div class="col-7">' +
+                '<select class="form-select material-select" name="Materiais[' + indices + '].MaterialId">' +
+                    '<option value="0">-- Selecione --</option>' + opts +
+                '</select>' +
+            '</div>' +
+            '<div class="col-4">' +
+                '<div class="input-group">' +
+                    '<input class="form-control material-qtd" name="Materiais[' + indices + '].Quantidade" type="number" step="0.01" min="0" placeholder="Gramas" aria-label="Quantidade em gramas" value="1" />' +
+                    '<span class="input-group-text">g</span>' +
+                '</div>' +
+            '</div>' +
+            '<div class="col-1 d-grid">' +
+                '<button type="button" class="btn btn-outline-danger btn-sm" onclick="removerMaterial(this)"><i class="bi bi-x-lg"></i></button>' +
+            '</div>';
+        container.appendChild(linha);
+        indices++;
+        recalcular();
+    }
+
+    function removerMaterial(btn) {
+        const linha = btn.closest('.material-linha');
+        linha.remove();
+        renumerar();
+        recalcular();
+    }
+
+    function renumerar() {
+        const linhas = document.querySelectorAll('.material-linha');
+        linhas.forEach((l, i) => {
+            l.querySelector('.material-select').name = 'Materiais[' + i + '].MaterialId';
+            l.querySelector('.material-qtd').name = 'Materiais[' + i + '].Quantidade';
+        });
+    }
+
+    function adicionarEmbalagem() {
+        const container = document.getElementById('embalagens-container');
+        const linha = document.createElement('div');
+        linha.className = 'row g-2 mb-2 embalagem-linha';
+        const opts = (window.__embalagensOpcoes || []).map(o =>
+            '<option value="' + o.value + '">' + o.text + '</option>').join('');
+        linha.innerHTML =
+            '<div class="col-7">' +
+                '<select class="form-select embalagem-select" name="Embalagens[' + indicesEmb + '].EmbalagemId">' +
+                    '<option value="0">-- Selecione --</option>' + opts +
+                '</select>' +
+            '</div>' +
+            '<div class="col-4">' +
+                '<div class="input-group">' +
+                    '<input class="form-control embalagem-qtd" name="Embalagens[' + indicesEmb + '].Quantidade" type="number" step="1" min="1" placeholder="Qtd" aria-label="Quantidade de embalagens" value="1" />' +
+                    '<span class="input-group-text">un</span>' +
+                '</div>' +
+            '</div>' +
+            '<div class="col-1 d-grid">' +
+                '<button type="button" class="btn btn-outline-danger btn-sm" onclick="removerEmbalagem(this)"><i class="bi bi-x-lg"></i></button>' +
+            '</div>';
+        container.appendChild(linha);
+        indicesEmb++;
+        recalcular();
+    }
+
+    function removerEmbalagem(btn) {
+        const linha = btn.closest('.embalagem-linha');
+        linha.remove();
+        renumerarEmbalagens();
+        recalcular();
+    }
+
+    function renumerarEmbalagens() {
+        const linhas = document.querySelectorAll('.embalagem-linha');
+        linhas.forEach((l, i) => {
+            l.querySelector('.embalagem-select').name = 'Embalagens[' + i + '].EmbalagemId';
+            l.querySelector('.embalagem-qtd').name = 'Embalagens[' + i + '].Quantidade';
+        });
+    }
+
+    function marcarTodos(check) {
+        // Marca/desmarca apenas os clientes atualmente visíveis (respeita a busca ativa)
+        document.querySelectorAll('.item-cliente:not([style*="display: none"])')
+            .forEach(i => { const cb = i.querySelector('.cliente-chk'); if (cb) cb.checked = check; });
+    }
+
+    // ==================== CÁLCULO AO VIVO ====================
+    function num(v) {
+        // Aceita tanto ponto (padrão HTML/JS, ex.: 0.20) quanto vírgula (pt-BR, ex.: 0,20).
+        // Exemplo: "1.234,56" (milhar com ponto + decimal com vírgula) → 1234.56
+        if (v === null || v === undefined || v === '') return 0;
+        var s = String(v).trim();
+        if (s.indexOf(',') !== -1) {
+            s = s.replace(/\./g, ''); // remove pontos de milhar
+            s = s.replace(',', '.');   // vírgula vira decimal
+        }
+        var n = parseFloat(s);
+        return isNaN(n) ? 0 : n;
+    }
+    function fmt(v) {
+        return v.toLocaleString('pt-BR', { style: 'currency', currency: 'BRL' });
+    }
+    function recalcular() {
+        // 1) Quantidade de material estimada (soma das quantidades) — automático
+        var qtdTotal = 0;
+        var custoMatEst = 0;
+        var linhas = document.querySelectorAll('.material-linha');
+        linhas.forEach(function (l) {
+            var sel = l.querySelector('.material-select');
+            var qtdInp = l.querySelector('.material-qtd');
+            var id = sel ? sel.value : '0';
+            var qtd = num(qtdInp ? qtdInp.value : 0);
+            qtdTotal += qtd;
+            var preco = window.__materiaisPrecos[id] ? num(window.__materiaisPrecos[id]) : 0;
+            custoMatEst += preco * qtd;
+        });
+        var campoQtd = document.getElementById('QtdMaterialEstimada');
+        if (campoQtd) campoQtd.value = qtdTotal.toFixed(2).replace('.', ',');
+
+        // 1.1) Custo de Embalagens
+        var custoEmb = 0;
+        var linhasEmb = document.querySelectorAll('.embalagem-linha');
+        linhasEmb.forEach(function (l) {
+            var sel = l.querySelector('.embalagem-select');
+            var qtdInp = l.querySelector('.embalagem-qtd');
+            var id = sel ? sel.value : '0';
+            var qtd = num(qtdInp ? qtdInp.value : 0);
+            var preco = (window.__embalagensPrecos && window.__embalagensPrecos[id]) ? num(window.__embalagensPrecos[id]) : 0;
+            custoEmb += preco * qtd;
+        });
+        var elCustoEmb = document.getElementById('prev-custoEmb');
+        if (elCustoEmb) elCustoEmb.textContent = fmt(custoEmb);
+
+        // 2) Custo Material Estimado
+        document.getElementById('prev-custoMatEst').textContent = fmt(custoMatEst);
+
+        // 3) Custo Material Real (proporcional ao Material Real / quantidade estimada)
+        // Regra: só calcula o custo real se houver quantidade real preenchida (>0); senão fica R$ 0,00.
+        var matReal = num(document.getElementById('MaterialReal') ? document.getElementById('MaterialReal').value : 0);
+        var custoMatReal = (qtdTotal > 0 && matReal > 0) ? custoMatEst * (matReal / qtdTotal) : 0;
+        document.getElementById('prev-custoMatReal').textContent = fmt(custoMatReal);
+
+        // 4) Custo Hora Estimado e Real
+        var vh = num(document.getElementById('ValorHoraMaquina') ? document.getElementById('ValorHoraMaquina').value : 0);
+        var hEst = num(document.getElementById('HorasEstimadas') ? document.getElementById('HorasEstimadas').value : 0);
+        var hReal = num(document.getElementById('HorasReais') ? document.getElementById('HorasReais').value : 0);
+        var custoHoraEst = hEst * vh;
+        var custoHoraReal = hReal * vh;
+        document.getElementById('prev-custoHoraEst').textContent = fmt(custoHoraEst);
+        document.getElementById('prev-custoHoraReal').textContent = fmt(custoHoraReal);
+
+        // 5) Soma Material + Hora (estimado / real) e diferença
+        var somaEst = custoMatEst + custoHoraEst;
+        var somaReal = custoMatReal + custoHoraReal;
+        document.getElementById('prev-somaEst').textContent = fmt(somaEst);
+        document.getElementById('prev-somaReal').textContent = fmt(somaReal);
+        document.getElementById('prev-somaDiff').textContent = fmt(somaReal - somaEst);
+
+        // 6) Custo pintura estimado/real (15% da hora máquina quando há pintura)
+        var pinturaOn = document.getElementById('chkPintura') ? document.getElementById('chkPintura').checked : false;
+        var PINTURA_PCT = 0.15;
+        var custoPinturaEst = pinturaOn ? hEst * PINTURA_PCT * vh : 0;
+
+        // 7) Preço a cobrar com base no custo estimado + lucro desejado + lucro da pintura
+        var custoFreteEst = (document.getElementById('chkEntrega') && document.getElementById('chkEntrega').checked)
+            ? num(document.getElementById('ValorFrete') ? document.getElementById('ValorFrete').value : 0) : 0;
+        var custoTotalEst = custoMatEst + custoHoraEst + custoPinturaEst + custoFreteEst + custoEmb;
+        document.getElementById('prev-custoTotalEst').textContent = fmt(custoTotalEst);
+
+        var lucro = num(document.getElementById('LucroDesejadoPercentual') ? document.getElementById('LucroDesejadoPercentual').value : 0);
+        document.getElementById('prev-lucroPct').textContent = lucro.toFixed(2).replace('.', ',') + '%';
+
+        var idNivel = document.getElementById('NivelDificuldadeId') ? document.getElementById('NivelDificuldadeId').value : '';
+        var pinturaPct = (pinturaOn && idNivel && window.__niveisPct[idNivel] !== undefined) ? num(window.__niveisPct[idNivel]) : 0;
+        document.getElementById('prev-pinturaPct').textContent = pinturaPct.toFixed(2).replace('.', ',') + '%';
+
+        var precoCobrar = custoTotalEst * (1 + lucro / 100) * (1 + pinturaPct / 100);
+        document.getElementById('prev-precoCobrar').textContent = fmt(precoCobrar);
+    }
+    // ==================== FIM CÁLCULO AO VIVO ====================
+
+    // Dispara o cálculo ao alterar qualquer campo relevante
+    document.getElementById('materiais-container').addEventListener('change', function (e) {
+        if (e.target.classList && (e.target.classList.contains('material-select') || e.target.classList.contains('material-qtd'))) {
+            recalcular();
+        }
+    });
+    document.getElementById('materiais-container').addEventListener('input', function (e) {
+        if (e.target.classList && e.target.classList.contains('material-qtd')) recalcular();
+    });
+    document.getElementById('embalagens-container').addEventListener('change', function (e) {
+        if (e.target.classList && (e.target.classList.contains('embalagem-select') || e.target.classList.contains('embalagem-qtd'))) {
+            recalcular();
+        }
+    });
+    document.getElementById('embalagens-container').addEventListener('input', function (e) {
+        if (e.target.classList && e.target.classList.contains('embalagem-qtd')) recalcular();
+    });
+    ['HorasEstimadas', 'HorasReais', 'MaterialReal', 'ValorHoraMaquina', 'LucroDesejadoPercentual', 'ValorFrete'].forEach(function (id) {
+        var el = document.getElementById(id);
+        if (el) el.addEventListener('input', recalcular);
+    });
+    var selNivel = document.getElementById('NivelDificuldadeId');
+    if (selNivel) selNivel.addEventListener('change', recalcular);
+
+    document.getElementById('chkPintura').addEventListener('change', function () {
+        document.getElementById('divNivel').classList.toggle('d-none', !this.checked);
+        recalcular();
+    });
+    document.getElementById('chkEntrega').addEventListener('change', function () {
+        document.getElementById('divFrete').classList.toggle('d-none', !this.checked);
+        recalcular();
+    });
+
+    // ===== Busca de clientes =====
+    function filtrarClientes() {
+        var busca = (document.getElementById('buscaCliente').value || '').trim().toLowerCase();
+        var total = 0, visiveis = 0;
+        document.querySelectorAll('#listaClientes .item-cliente').forEach(function (item) {
+            total++;
+            var nome = item.getAttribute('data-nome') || '';
+            var mostra = !busca || nome.indexOf(busca) !== -1;
+            item.style.display = mostra ? '' : 'none';
+            if (mostra) visiveis++;
+        });
+        var lbl = document.getElementById('resBuscaCliente');
+        if (lbl) lbl.textContent = busca ? (visiveis + ' de ' + total + ' cliente(s)') : '';
+    }
+    var buscaClienteEl = document.getElementById('buscaCliente');
+    if (buscaClienteEl) buscaClienteEl.addEventListener('input', filtrarClientes);
+
+    // Cálculo inicial (ao abrir a tela, preenche com valores já cadastrados)
+    recalcular();
+
+</script>
