@@ -1,6 +1,6 @@
 # Manage-Infinity
 
-This project is for my manage all my projects in my company Infinity-3D
+This project is for my manage projects in company Infinity-3D
 
 # Functions Manager
 - Material
